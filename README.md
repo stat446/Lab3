@@ -22,7 +22,7 @@ birds <- read.csv('http://math.montana.edu/ahoegh/teaching/stat446/birdsurvey.cs
 #### 1. 
 
 ##### a. (4 points)
-Take a SRS of size 20 and compute an approximate sampling distribution (by repeated samples) of the population total.
+Take a SRS of size 20 and create an approximate sampling distribution (by repeated samples) of the population total.
 
 ##### b. (3 points)
 Plot the approximate sampling distribution and the true population total.
@@ -33,7 +33,7 @@ Compute the MSE of the estimator.
 #### 2. 
 
 ##### a. (4 points)
-Take a stratified random sample where five samples are drawn from each terrain type. Compute the MSE of this estimator.
+Take a stratified random sample where five samples are drawn from each terrain type and create an approximate sampling distribution (by repeated samples) of the population total.
 ```
 #Hint this will take one sample
 birds %>% group_by(terrain) %>% sample_n(5) %>% ungroup() %>% select(bird.counts) %>% 
