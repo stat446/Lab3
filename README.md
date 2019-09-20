@@ -34,6 +34,11 @@ Compute the MSE of the estimator.
 
 ##### a. (4 points)
 Take a stratified random sample where five samples are drawn from each terrain type. Compute the MSE of this estimator.
+```
+#Hint this will take one sample
+birds %>% group_by(terrain) %>% sample_n(5) %>% ungroup() %>% select(bird.counts) %>% 
+summarize(ybar = mean(bird.counts)) %>% pull()
+```
 
 ##### b. (3 points)
 Plot the approximate sampling distribution and the true population total.
