@@ -8,6 +8,7 @@ output:
 ```{r, include = F}
 library(dplyr)
 library(ggplot2)
+library(knitr)
 ```
 
 
@@ -36,12 +37,12 @@ population_total <- birds %>% summarize(t = sum(bird.counts)) %>% select(t) %>% 
 Take a SRS of size 20 and compute an approximate sampling distribution (by repeated samples) of the population total.
 
 ```{r}
-samples <- replicate(1000, sample(birds$bird.counts, size = 20)) %>% colMeans() * 200
+samples_srs <- replicate(1000, sample(birds$bird.counts, size = 20)) %>% colMeans() * 200
 
 # or equivalently with a loop
-samples_loop <- rep(0, 200)
+samples_srs <- rep(0, 1000)
 for (iter in 1:1000){
-  samples_loop[iter] <- mean(sample(birds$bird.counts, size = 20)) * 200
+  samples_srs[iter] <- mean(sample(birds$bird.counts, size = 20)) * 200
 }
 ```
 
@@ -50,20 +51,19 @@ for (iter in 1:1000){
 Plot the approximate sampling distribution and the true population total.
 
 ```{r, warning=F}
-tibble(val = samples, label ='samples') %>% ggplot(aes(x = samples)) + geom_histogram(bins=30) + 
-  xlab(expression(hat(t))) + ylab('') + ggtitle('Sampling Distribution for Population Total') + 
-  geom_vline(xintercept = population_total)
+tibble(val = samples_srs, label ='samples') %>% ggplot(aes(x = val)) + geom_histogram(bins=30) + 
+  xlab(expression(hat(t))) + ylab('') + ggtitle('Sampling Distribution for Population Total', 
+  subtitle = "SRS") + geom_vline(xintercept = population_total)
 ```
 
 
 ##### c. (3 points)
 Compute the MSE of the estimator.
 ```{r}
-mse <- mean((samples - population_total)^2)
-#mse2 <- sum((samples - mean(samples))^2)/1000 + (mean(samples) - population_total)^2
+mse_srs <- mean((samples_srs - population_total)^2)
 ```
 
-The MSE of the estimator is `r round(mse)`. Often the square root of the MSE (the rMSE) is more intuitive. This value is `r round(sqrt(mse))`
+The MSE of the estimator is `r round(mse_srs)`. Often the square root of the MSE (the rMSE) is more intuitive. This value is `r round(sqrt(mse_srs))`
 
 #### 2. 
 
@@ -71,16 +71,30 @@ The MSE of the estimator is `r round(mse)`. Often the square root of the MSE (th
 Take a stratified random sample where five samples are drawn from each terrain type. Compute the MSE of this estimator.
 ```{r}
 #Hint this will take one sample
-birds %>% group_by(terrain) %>% sample_n(5) %>% ungroup() %>% select(bird.counts) %>% 
-  summarize(ybar = mean(bird.counts)) %>% pull()
+samples_strat <- rep(0, 1000)
+for (iter in 1:1000){
+  samples_strat[iter] <- birds %>% group_by(terrain) %>% sample_n(5) %>% ungroup() %>% select(bird.counts) %>% summarize(ybar = mean(bird.counts)) %>% pull() * 200
+}
 ```
 
 
 ##### b. (3 points)
 Plot the approximate sampling distribution and the true population total.
 
+```{r, warning=F}
+tibble(val = samples_strat, label ='samples') %>% ggplot(aes(x = val)) + geom_histogram(bins=30) + 
+  xlab(expression(hat(t))) + ylab('') + ggtitle('Sampling Distribution for Population Total', 
+  subtitle = 'Stratified Sample') + geom_vline(xintercept = population_total) + xlim(range(samples_srs))
+```
+
 ##### c. (3 points)
 Compute the MSE of the estimator.
+
+```{r}
+mse_strat <- mean((samples_strat - population_total)^2)
+```
+
+The mse of the stratified sample is `r round(mse_strat)`.
 
 #### 3.  (5 points)
 
@@ -88,5 +102,30 @@ Compute the MSE of the estimator.
 
  What method was most effective in terms of MSE? What shortcomings did the other methods have? 
  
+_The SRS was much more effective with a mse of `r round(mse_srs)`, whereas the stratified sample resulted in an mse of `r round(mse_strat)`. The shortcoming with the stratified sample was that it was not representative and did not have the appropriate weighting to account for the sampling approach._ 
+ 
 ##### b. (4 points)
 Suppose another option was to use a stratified sample where 10 % of the sampling units in each strata are selected. Do you think this will perform better or worse than the option in part 2, why?
+
+```{r, warning = F}
+samples_strat2 <- rep(0, 1000)
+for (iter in 1:1000){
+  samples_strat2[iter] <- birds %>% group_by(terrain) %>% sample_frac(.1) %>% ungroup() %>%
+    select(bird.counts) %>% summarize(ybar = mean(bird.counts)) %>% pull() * 200
+}
+
+tibble(val = samples_strat2, label ='samples') %>% ggplot(aes(x = val)) + geom_histogram(bins=30) + 
+  xlab(expression(hat(t))) + ylab('') + ggtitle('Sampling Distribution for Population Total',
+  subtitle = 'Stratified option 2') + geom_vline(xintercept = population_total) + xlim(range(samples_srs))
+
+mse_strat2 <- mean((samples_strat2 - population_total)^2)
+```
+
+The approach taking 10% of the samples from each group performs substantially better. This is because we are taking a representative sample of each group. Alternatively, the sample previously selected with the other approach could also be weighted -- more on that later.
+
+```{r}
+knitr::kable(tibble(method = c('srs','stratified 1', 'stratified 2'), 
+      mse = c(round(mse_srs), round(mse_strat), round(mse_strat2))))
+```
+
+
